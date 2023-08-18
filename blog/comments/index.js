@@ -32,7 +32,8 @@ app.post('/posts/:id/comments', async (req, res) => {
     const { content } = req?.body?.comment;
     const new_comment = {
         _id: uuidv4(),
-        content
+        content,
+        status: "pending"
     };
     //check if the post with the received id exists or not
     if (comments?.hasOwnProperty(postId)) {
@@ -70,9 +71,34 @@ app.post('/posts/:id/comments', async (req, res) => {
 
 
 //event handler reception
-app.post('/events', (req, res) => {
-    const { event } = req.body;
-    console.log('Received event', event?.type);
+app.post('/events', async (req, res) => {
+
+    try {
+        const { event } = req.body;
+        // console.log('Received event', event?.type);
+        if (event?.type === "CommentModerated") {
+            //update the commment and emit event updated event
+            //find the target post comment
+            let targetComment = comments[event?.data?.postId]
+                ?.find(commentItem => commentItem._id === event?.data?._id);
+            targetComment.status = event?.data?.status;
+
+            //emit comment update event
+            //emit the event that new comment has been created
+            await axios.post('http://localhost:8500/events', {
+                type: 'CommentUpdated',
+                data: {
+                    ...targetComment,
+                    postId: event?.data?.postId
+                }
+            });
+
+        }
+    } catch (error) {
+        console.log(error);
+    }
+
+
 
     return res.send({});
 });

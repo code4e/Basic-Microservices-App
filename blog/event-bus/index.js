@@ -11,9 +11,13 @@ app.use(bodyParser.json());
 
 app.use(cors());
 
+const events = [];
+
 app.post('/events', async (req, res) => {
     const event = req.body;
-    // console.log(event);
+
+    //push the received event into the events store
+    events?.push(event);
 
     try {
         //send event to posts service
@@ -36,11 +40,26 @@ app.post('/events', async (req, res) => {
         console.log(error);
     }
 
+    try {
+        //send event to moderation service
+        await axios.post('http://localhost:8600/events', { event });
+    } catch (error) {
+        console.log(error);
+    }
+
+
     return res.send({
         status: 'OK'
     });
 
 });
+
+app.get('/events', (req, res) => {
+    return res.status(200).json({
+        message: "All the events so far",
+        events
+    });
+})
 
 
 app.listen(PORT, () => console.log(`Listening on PORT ${PORT}`));

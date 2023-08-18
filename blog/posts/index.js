@@ -59,7 +59,7 @@ app.post('/posts', async (req, res) => {
 //event handler reception
 app.post('/events', (req, res) => {
     const { event } = req.body;
-    console.log('Received event', event?.type);
+    // console.log('Received event', event?.type);
 
     return res.send({});
 });

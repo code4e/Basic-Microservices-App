@@ -47,7 +47,15 @@ app.get('/posts', (req, res) => {
 //to receive the event, interpret it, and then store it appropriately
 app.post('/events', (req, res) => {
     const { event } = req.body;
+    handleEvent(event);
 
+    return res.send({
+        status: "OK"
+    })
+
+});
+
+async function handleEvent(event) {
     //interpret post creation event
     if (event?.type === "PostCreated") {
         //add the new post to the postDetails data structure
@@ -64,12 +72,31 @@ app.post('/events', (req, res) => {
             ...event?.data
         });
     }
-    // console.log(JSON.stringify(postsDetails));
-    return res.send({
-        status: "OK"
-    })
+    // interpret the comment updation event
+    else if (event?.type === "CommentUpdated") {
+        //locate the target post comment
+        let targetComment = postsDetails[event?.data?.postId]
+            ?.comments
+            ?.find(commentItem => commentItem?._id === event?.data?._id);
+        //update the status of the comment
+        targetComment.status = event?.data?.status;
+    }
+}
+
+
+
+app.listen(PORT, async () => {
+    console.log('Sucessfully started the query microservice on port', PORT);
+
+    try {
+        //handle any pending events when the query service comes online
+        let res = await axios.get('http://localhost:8500/events');
+        const events = res?.data?.events;
+        for(let event of events){
+            handleEvent(event);
+        }
+    } catch (error) {
+        console.log(error);
+    }
 
 });
-
-
-app.listen(PORT, () => console.log('Sucessfully started the query microservice on port', PORT));
